@@ -1,0 +1,17 @@
+{
+  "name": "@souvik65/bug-finder-kit",
+  "version": "1.0.0",
+  "description": "Installs the bug-finder skill into your coding agent",
+  "type": "module",
+  "bin": {
+    "bug-finder": "./bin/cli.js"
+  },
+  "files": ["bin", "skills", "README.md", "LICENSE"],
+  "engines": { "node": ">=18" },
+  "keywords": ["agent-skills", "claude-code", "bug-finder", "debugging"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Souvik65/bug-finder-kit.git"
+  }
+}
