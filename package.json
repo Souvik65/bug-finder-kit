@@ -1,6 +1,6 @@
 {
   "name": "@souvik65/bug-finder-kit",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Installs the bug-finder skill into your coding agent",
   "type": "module",
   "bin": {
