@@ -6,12 +6,28 @@
   "bin": {
     "bug-finder": "./bin/cli.js"
   },
-  "files": ["bin", "skills", "README.md", "LICENSE"],
-  "engines": { "node": ">=18" },
-  "keywords": ["agent-skills", "claude-code", "bug-finder", "debugging"],
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "agent-skills",
+    "claude-code",
+    "bug-finder",
+    "debugging"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Souvik65/bug-finder-kit.git"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.8.1"
   }
 }
