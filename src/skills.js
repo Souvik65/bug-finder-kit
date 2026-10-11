@@ -16,8 +16,15 @@ export function listSkills() {
     .filter((d) => d.isDirectory() && fs.existsSync(path.join(SKILLS_ROOT, d.name, "SKILL.md")))
     .map((d) => {
       const text = fs.readFileSync(path.join(SKILLS_ROOT, d.name, "SKILL.md"), "utf8");
-      const m = text.match(/^description:\s*(.+)$/m);
-      return { name: d.name, description: m ? m[1].trim() : "" };
+      let desc = "";
+      const mMulti = text.match(/^description:\s*[>|]?\r?\n\s+([^\r\n]+)/m);
+      const mSingle = text.match(/^description:\s*([^\r\n>|]+)$/m);
+      if (mMulti && mMulti[1]) {
+        desc = mMulti[1].trim();
+      } else if (mSingle && mSingle[1]) {
+        desc = mSingle[1].trim();
+      }
+      return { name: d.name, description: desc };
     });
 }
 

@@ -17,6 +17,7 @@ const { values: f, positionals } = parseArgs({
     global: { type: "boolean", short: "g" },
     target: { type: "string", short: "t", multiple: true },
     skill: { type: "string", short: "s", multiple: true },
+    dir: { type: "string", short: "d" },
     yes: { type: "boolean", short: "y" },
     force: { type: "boolean", short: "f" },
     help: { type: "boolean", short: "h" },
@@ -26,7 +27,7 @@ const { values: f, positionals } = parseArgs({
 
 const [cmd, ...rest] = positionals;
 const available = listSkills();
-const interactive = !f.yes && process.stdin.isTTY && process.stdout.isTTY;
+const interactive = !f.yes && !f.dir && process.stdin.isTTY && process.stdout.isTTY;
 
 const bail = (v) => {
   if (p.isCancel(v)) {
@@ -40,7 +41,7 @@ function help() {
   console.log(`${pkg.name} v${pkg.version}
 
 Usage:
-  bug-finder init                 interactive install
+  bug-finder init                 interactive install for your editor
   bug-finder add <skill...>       install specific skills
   bug-finder remove <skill...>    uninstall skills
   bug-finder list                 show available skills
@@ -48,7 +49,8 @@ Usage:
 Options:
   -s, --skill <name>   skill to install (repeatable)
   -t, --target <name>  ${Object.keys(TARGETS).join(" | ")} (repeatable, default: agents)
-  -g, --global         install for all projects
+  -d, --dir <path>     install to any custom directory (any code editor)
+  -g, --global         install for all projects globally
   -y, --yes            no prompts, use defaults
   -f, --force          overwrite existing
   -h, --help   -v, --version`);
@@ -74,23 +76,15 @@ async function choose(initialSkills) {
   let targets = f.target || [];
   let scope = f.global ? "global" : "project";
 
+  if (!skills.length) {
+    skills = available.map((s) => s.name);
+  }
+
   if (interactive) {
-    if (!skills.length) {
-      skills =
-        available.length === 1
-          ? [available[0].name]
-          : bail(
-              await p.multiselect({
-                message: "Which skills do you want to install?",
-                options: available.map((s) => ({ value: s.name, label: s.name, hint: s.description.slice(0, 60) })),
-                required: true,
-              })
-            );
-    }
     if (!targets.length) {
       targets = bail(
         await p.multiselect({
-          message: "Which editors/agents?",
+          message: "Select your editor / agent environment:",
           options: Object.entries(TARGETS).map(([k, t]) => ({ value: k, label: t.label, hint: t.project })),
           initialValues: ["agents"],
           required: true,
@@ -100,24 +94,26 @@ async function choose(initialSkills) {
     if (!f.global) {
       scope = bail(
         await p.select({
-          message: "Install where?",
+          message: "Install location:",
           options: [
-            { value: "project", label: "This project" },
-            { value: "global", label: "Globally (all projects)" },
+            { value: "project", label: "Current project directory" },
+            { value: "global", label: "Globally for all projects (User profile)" },
           ],
         })
       );
     }
   } else {
-    if (!skills.length) skills = available.map((s) => s.name);
     if (!targets.length) targets = ["agents"];
   }
   return { skills, targets, scope };
 }
 
 function install({ skills, targets, scope }) {
-  for (const t of targets) {
-    const dest = resolveDir(t, scope);
+  const destinations = f.dir
+    ? [resolveDir(null, null, f.dir)]
+    : targets.map((t) => resolveDir(t, scope));
+
+  for (const dest of destinations) {
     fs.mkdirSync(dest, { recursive: true });
     for (const name of skills) {
       const out = path.join(dest, name);
@@ -152,10 +148,12 @@ async function main() {
   if (cmd === "remove") {
     if (!rest.length) return p.log.error("Specify skills to remove.");
     validate(rest);
-    const targets = f.target?.length ? f.target : ["agents"];
-    for (const t of targets) {
+    const destinations = f.dir
+      ? [resolveDir(null, null, f.dir)]
+      : (f.target?.length ? f.target : ["agents"]).map((t) => resolveDir(t, f.global ? "global" : "project"));
+    for (const dest of destinations) {
       for (const name of rest) {
-        const out = path.join(resolveDir(t, f.global ? "global" : "project"), name);
+        const out = path.join(dest, name);
         if (fs.existsSync(out)) {
           fs.rmSync(out, { recursive: true, force: true });
           p.log.success(`Removed ${out}`);
